@@ -1,0 +1,18 @@
+spring:
+  datasource:
+    driverClassName: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:5432/cache-poc
+    username: postgres
+    password: ${POSTGRES_PASSWORD}
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    generateDdl: true
+    showSql: true
+    hibernate:
+      ddl-auto: update
+
+snowflake:
+  datacenterId: 1
+  workerId: 2
