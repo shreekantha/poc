@@ -6,6 +6,7 @@ import in.emagna.cachepoc.service.ProductService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 @Slf4j
 @Service
+@CacheConfig(cacheNames = {"products-list"})
 public class ProductServiceImpl implements ProductService {
     private final ProductRepository productRepository;
     private final CacheManager cacheManager;
@@ -26,11 +28,12 @@ public class ProductServiceImpl implements ProductService {
      * @param product
      * @return
      */
-    @CachePut(value = "products",key = "#product.id")
+    @CachePut(key = "#product.id")
     @Override
     public Product create(Product product) {
         Product saved = productRepository.save(product);
-        clearCache();
+//        clearCache();
+        clearCacheEntries();
 //        updateProductCache(saved);
         return saved;
     }
@@ -39,7 +42,7 @@ public class ProductServiceImpl implements ProductService {
      * @param product
      * @return
      */
-    @CachePut(value = "products", key = "#product.id")
+    @CachePut( key = "#product.id")
     @Override
     public Product update(Product product) {
         Product existingProduct = productRepository.findById(product.getId())
@@ -52,7 +55,7 @@ public class ProductServiceImpl implements ProductService {
      * @param id
      * @return
      */
-    @Cacheable(value = "products", key = "#id")
+    @Cacheable(key = "#id")
     @Override
     public Product findById(Long id) {
         return productRepository.findById(id).orElseThrow(() -> new IllegalStateException("Product not found"));
@@ -61,7 +64,7 @@ public class ProductServiceImpl implements ProductService {
     /**
      * @return
      */
-    @Cacheable(value = "products",key = "'allProducts'")
+    @Cacheable(key = "'allProducts'")
     @Override
     public List<Product> findAll() {
         return productRepository.findAll();
@@ -78,9 +81,18 @@ public class ProductServiceImpl implements ProductService {
         }
     }
 
-    @CacheEvict(value = "products", key = "'allProducts'")
+    @CacheEvict( key = "'allProducts'",allEntries = true,beforeInvocation = true,cacheNames = "products-list")
     public void clearCache() {
         // Evict the cache for findAll method
         log.info("Evicting findAll cache...");
     }
+
+
+    public void clearCacheEntries() {
+        Cache cache = cacheManager.getCache("products-list");
+        if (cache != null) {
+            cache.evict("allProducts");
+        }
+    }
+
 }
